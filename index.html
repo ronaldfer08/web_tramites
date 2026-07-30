@@ -224,16 +224,41 @@
                 <div class="card-body text-center p-4">
                     <h5 class="card-title mb-3">Casi terminamos. Por favor, completa estos formularios:</h5>
                     <div class="d-grid gap-3 d-md-block mt-4">
-                        <a href="https://forms.gle/NzikGPHyPoXBV3uE6" target="_blank" class="btn btn-outline-primary px-4 py-2 mx-md-2 mb-2 mb-md-0 fw-bold">
+                        <button type="button"
+                                class="btn btn-outline-primary px-4 py-2 mx-md-2 mb-2 mb-md-0 fw-bold form-launcher"
+                                data-form-title="Ficha de Datos Personales"
+                                data-form-url="https://docs.google.com/forms/d/e/1FAIpQLSfNWDFYCfc1AFC5d4BC4FnxJ-3T0T32WM49rVejnpFpo7rDyQ/viewform?embedded=true">
                             1️⃣ Ficha de Datos Personales
-                        </a>
-                        <a href="https://forms.gle/u9AeHL6MiyginZHD6" target="_blank" class="btn btn-outline-danger px-4 py-2 mx-md-2 fw-bold">
+                        </button>
+                        <button type="button"
+                                class="btn btn-outline-danger px-4 py-2 mx-md-2 fw-bold form-launcher"
+                                data-form-title="Acuerdo de Confidencialidad"
+                                data-form-url="https://docs.google.com/forms/d/e/1FAIpQLSfU_0ry8OaUN7wgIW1KEd2CheDRbk28eTCORIFz5lzGRtxtOA/viewform?embedded=true">
                             2️⃣ Acuerdo de Confidencialidad
-                        </a>
+                        </button>
                     </div>
-                    <p class="info-text mt-3">Haz clic en cada botón. Se abrirán en una nueva ventana.</p>
+                    <p class="info-text mt-3">Haz clic en cada botón. El formulario se abrirá dentro de esta página.</p>
                 </div>
             </div>
+
+            <section id="formulario-integrado" class="card d-none" aria-live="polite">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span id="titulo-formulario"></span>
+                    <button type="button" id="cerrar-formulario" class="btn-close" aria-label="Cerrar formulario"></button>
+                </div>
+                <div class="card-body p-0">
+                    <iframe
+                        id="visor-formulario"
+                        title="Formulario de trámite"
+                        width="100%"
+                        height="850"
+                        frameborder="0"
+                        marginheight="0"
+                        marginwidth="0">
+                        Cargando…
+                    </iframe>
+                </div>
+            </section>
 
             <!-- Botón de Envío -->
             <div class="text-center mt-5 mb-5">
@@ -245,5 +270,24 @@
         </form>
     </main>
 
+    <script>
+        const formularioIntegrado = document.getElementById('formulario-integrado');
+        const visorFormulario = document.getElementById('visor-formulario');
+        const tituloFormulario = document.getElementById('titulo-formulario');
+
+        document.querySelectorAll('.form-launcher').forEach((boton) => {
+            boton.addEventListener('click', () => {
+                tituloFormulario.textContent = boton.dataset.formTitle;
+                visorFormulario.src = boton.dataset.formUrl;
+                formularioIntegrado.classList.remove('d-none');
+                formularioIntegrado.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+
+        document.getElementById('cerrar-formulario').addEventListener('click', () => {
+            formularioIntegrado.classList.add('d-none');
+            visorFormulario.src = '';
+        });
+    </script>
 </body>
 </html>
