@@ -50,6 +50,25 @@
                     </div>
 
                     <div class="mb-4">
+                        <label for="dni" class="form-label">Número de DNI</label>
+                        <p id="dni-ayuda" class="info-text">Ingresa los 8 dígitos de tu DNI.</p>
+                        <input
+                            id="dni"
+                            name="dni"
+                            class="form-control"
+                            type="text"
+                            placeholder="Ejemplo: 12345678"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            pattern="[0-9]{8}"
+                            minlength="8"
+                            maxlength="8"
+                            aria-describedby="dni-ayuda"
+                            title="El DNI debe contener exactamente 8 dígitos."
+                            required>
+                    </div>
+
+                    <div class="mb-4">
                         <label class="form-label">DNI o Carné de Extranjería (Ambas caras)</label>
                         <p class="info-text">Debe estar vigente y ser legible.</p>
                         <input class="form-control" type="file" accept=".pdf" required>
