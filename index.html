@@ -138,6 +138,19 @@
                 </div>
                 <div class="card-body p-4">
                     <div class="mb-4">
+                        <label for="nombres-completos" class="form-label">Nombres y apellidos completos</label>
+                        <p class="info-text">Escríbelos tal como aparecen en tu documento de identidad.</p>
+                        <input
+                            id="nombres-completos"
+                            name="nombres_completos"
+                            class="form-control"
+                            type="text"
+                            placeholder="Ejemplo: Juan Carlos Pérez López"
+                            autocomplete="name"
+                            required>
+                    </div>
+
+                    <div class="mb-4">
                         <label class="form-label">DNI o Carné de Extranjería (Ambas caras)</label>
                         <p class="info-text">Debe estar vigente y ser legible.</p>
                         <input class="form-control" type="file" accept=".pdf" required>
