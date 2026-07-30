@@ -16,6 +16,7 @@
   const statusEl = document.getElementById("upload-status");
   const submitBtn = document.getElementById("btn-enviar");
   const dniInput = document.getElementById("dni");
+  let pendingConversions = 0;
 
   if (!form || !window.supabase) {
     return;
@@ -134,7 +135,12 @@
     const extension = extensionFromFile(file);
 
     if (file.type === "application/pdf" || extension === "pdf") {
-      return file;
+      return file.type === "application/pdf"
+        ? file
+        : new File([file], file.name, {
+            type: "application/pdf",
+            lastModified: file.lastModified,
+          });
     }
 
     if (
@@ -149,6 +155,14 @@
     );
   }
 
+  function isImageFile(file) {
+    const extension = extensionFromFile(file);
+    return (
+      ["image/jpeg", "image/png"].includes(file.type) ||
+      ["jpg", "jpeg", "png"].includes(extension)
+    );
+  }
+
   function collectFiles(formElement) {
     return FILE_FIELDS.map((field) => {
       const input = formElement.elements.namedItem(field.name);
@@ -156,6 +170,39 @@
       return { ...field, file };
     }).filter((item) => item.file);
   }
+
+  FILE_FIELDS.forEach((field) => {
+    const input = form.elements.namedItem(field.name);
+    if (!input) return;
+
+    input.addEventListener("change", async () => {
+      const selectedFile = input.files && input.files[0];
+      if (!selectedFile || !isImageFile(selectedFile)) return;
+
+      pendingConversions += 1;
+      submitBtn.disabled = true;
+      setStatus(`Convirtiendo ${field.label} a PDF...`, "info");
+
+      try {
+        const pdfFile = await convertImageToPdf(selectedFile);
+        const replacement = new DataTransfer();
+        replacement.items.add(pdfFile);
+        input.files = replacement.files;
+        setStatus(`${field.label} se convirtió correctamente a PDF.`, "success");
+      } catch (error) {
+        input.value = "";
+        setStatus(
+          `No se pudo convertir ${field.label}: ${error.message}`,
+          "danger"
+        );
+      } finally {
+        pendingConversions -= 1;
+        if (pendingConversions === 0) {
+          submitBtn.disabled = false;
+        }
+      }
+    });
+  });
 
   function buildFolderName(dni, apellidosNombres) {
     const safeName = apellidosNombres
@@ -181,6 +228,15 @@
 
       const pdfFile = await prepareFileAsPdf(item.file);
       const path = `${folderName}/${item.label}.pdf`;
+
+      if (
+        pdfFile.type !== "application/pdf" ||
+        extensionFromFile(pdfFile) !== "pdf"
+      ) {
+        throw new Error(
+          `${item.label}: la conversión no produjo un archivo PDF válido.`
+        );
+      }
 
       setStatus(
         `Subiendo ${i + 1} de ${files.length}: ${item.label}.pdf...`,
@@ -260,6 +316,14 @@
 
     const dni = String(form.dni.value || "").trim();
     const apellidosNombres = String(form.apellidos_nombres.value || "").trim();
+
+    if (pendingConversions > 0) {
+      setStatus(
+        "Espera a que terminen de convertirse las imágenes a PDF.",
+        "warning"
+      );
+      return;
+    }
 
     if (!/^\d{8,10}$/.test(dni)) {
       setStatus(
