@@ -123,3 +123,8 @@ body {
     background-color: #c90510;
     border-color: #c90510;
 }
+
+.upload-status {
+    margin-top: 1.5rem;
+    border-radius: 8px;
+}
