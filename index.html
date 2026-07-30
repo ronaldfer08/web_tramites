@@ -51,7 +51,7 @@
 
                     <div class="mb-4">
                         <label for="dni" class="form-label">Número de DNI</label>
-                        <p id="dni-ayuda" class="info-text">Ingresa los 8 dígitos de tu DNI. La carpeta se identificará con tu DNI, apellidos y nombres.</p>
+                        <p id="dni-ayuda" class="info-text">Ingresa entre 8 y 10 dígitos. No se permiten letras ni símbolos.</p>
                         <input
                             id="dni"
                             name="dni"
@@ -60,11 +60,11 @@
                             placeholder="Ejemplo: 12345678"
                             inputmode="numeric"
                             autocomplete="off"
-                            pattern="[0-9]{8}"
+                            pattern="[0-9]{8,10}"
                             minlength="8"
-                            maxlength="8"
+                            maxlength="10"
                             aria-describedby="dni-ayuda"
-                            title="El DNI debe contener exactamente 8 dígitos."
+                            title="El DNI debe contener entre 8 y 10 dígitos, sin letras ni símbolos."
                             required>
                     </div>
 

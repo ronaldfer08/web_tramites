@@ -15,6 +15,7 @@
   const form = document.getElementById("form-ingreso");
   const statusEl = document.getElementById("upload-status");
   const submitBtn = document.getElementById("btn-enviar");
+  const dniInput = document.getElementById("dni");
 
   if (!form || !window.supabase) {
     return;
@@ -39,6 +40,12 @@
   const client = configReady
     ? window.supabase.createClient(projectUrl, anonKey)
     : null;
+
+  if (dniInput) {
+    dniInput.addEventListener("input", () => {
+      dniInput.value = dniInput.value.replace(/\D/g, "").slice(0, 10);
+    });
+  }
 
   function setStatus(message, type) {
     if (!statusEl) return;
@@ -169,8 +176,11 @@
     const dni = String(form.dni.value || "").trim();
     const apellidosNombres = String(form.apellidos_nombres.value || "").trim();
 
-    if (!/^\d{8}$/.test(dni)) {
-      setStatus("El DNI debe tener exactamente 8 dígitos.", "warning");
+    if (!/^\d{8,10}$/.test(dni)) {
+      setStatus(
+        "El DNI debe tener entre 8 y 10 dígitos, sin letras ni símbolos.",
+        "warning"
+      );
       return;
     }
 
