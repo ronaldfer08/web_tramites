@@ -63,11 +63,90 @@
 
   function extensionFromFile(file) {
     const parts = file.name.split(".");
-    const ext = parts.length > 1 ? parts.pop().toLowerCase() : "";
-    if (["pdf", "jpg", "jpeg", "png", "webp"].includes(ext)) {
-      return ext === "jpeg" ? "jpg" : ext;
+    return parts.length > 1 ? parts.pop().toLowerCase() : "";
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error(`No se pudo leer ${file.name}.`));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function loadImage(dataUrl, fileName) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () =>
+        reject(new Error(`No se pudo procesar la imagen ${fileName}.`));
+      image.src = dataUrl;
+    });
+  }
+
+  async function convertImageToPdf(file) {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      throw new Error(
+        "No se pudo cargar el conversor de imágenes a PDF. Recarga la página."
+      );
     }
-    return "bin";
+
+    const extension = extensionFromFile(file);
+    const imageFormat =
+      file.type === "image/png" || extension === "png" ? "PNG" : "JPEG";
+    const dataUrl = await readFileAsDataUrl(file);
+    const image = await loadImage(dataUrl, file.name);
+    const orientation =
+      image.naturalWidth > image.naturalHeight ? "landscape" : "portrait";
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({
+      orientation,
+      unit: "pt",
+      format: "a4",
+      compress: true,
+    });
+
+    const margin = 24;
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const availableWidth = pageWidth - margin * 2;
+    const availableHeight = pageHeight - margin * 2;
+    const scale = Math.min(
+      availableWidth / image.naturalWidth,
+      availableHeight / image.naturalHeight
+    );
+    const width = image.naturalWidth * scale;
+    const height = image.naturalHeight * scale;
+    const x = (pageWidth - width) / 2;
+    const y = (pageHeight - height) / 2;
+
+    pdf.addImage(dataUrl, imageFormat, x, y, width, height, undefined, "MEDIUM");
+
+    const baseName = file.name.replace(/\.[^.]+$/, "") || "documento";
+    return new File([pdf.output("blob")], `${baseName}.pdf`, {
+      type: "application/pdf",
+      lastModified: Date.now(),
+    });
+  }
+
+  async function prepareFileAsPdf(file) {
+    const extension = extensionFromFile(file);
+
+    if (file.type === "application/pdf" || extension === "pdf") {
+      return file;
+    }
+
+    if (
+      ["image/jpeg", "image/png"].includes(file.type) ||
+      ["jpg", "jpeg", "png"].includes(extension)
+    ) {
+      return convertImageToPdf(file);
+    }
+
+    throw new Error(
+      `${file.name}: formato no permitido. Usa PDF, JPG, JPEG o PNG.`
+    );
   }
 
   function collectFiles(formElement) {
@@ -94,26 +173,32 @@
 
     for (let i = 0; i < files.length; i += 1) {
       const item = files[i];
-      const ext = extensionFromFile(item.file);
-      const path = `${folderName}/${item.label}.${ext}`;
 
       setStatus(
-        `Subiendo ${i + 1} de ${files.length}: ${item.label}...`,
+        `Procesando ${i + 1} de ${files.length}: ${item.label}...`,
         "info"
       );
 
-      let { error } = await client.storage.from(bucket).upload(path, item.file, {
+      const pdfFile = await prepareFileAsPdf(item.file);
+      const path = `${folderName}/${item.label}.pdf`;
+
+      setStatus(
+        `Subiendo ${i + 1} de ${files.length}: ${item.label}.pdf...`,
+        "info"
+      );
+
+      let { error } = await client.storage.from(bucket).upload(path, pdfFile, {
         cacheControl: "3600",
         upsert: false,
-        contentType: item.file.type || undefined,
+        contentType: "application/pdf",
       });
 
       // Si ya existe, sobrescribe (requiere política UPDATE)
       if (error && /already exists/i.test(error.message)) {
-        ({ error } = await client.storage.from(bucket).upload(path, item.file, {
+        ({ error } = await client.storage.from(bucket).upload(path, pdfFile, {
           cacheControl: "3600",
           upsert: true,
-          contentType: item.file.type || undefined,
+          contentType: "application/pdf",
         }));
       }
 

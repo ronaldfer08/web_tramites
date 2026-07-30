@@ -25,7 +25,7 @@
 
     <main class="container mb-5">
         <div class="alert alert-info border-0 shadow-sm text-center mb-4 rounded-3 reminder-alert" role="alert">
-            💡 <strong>¡Un pequeño recordatorio!</strong> Para agilizar tu trámite, preferimos documentos en <strong>PDF</strong>. También se aceptan JPG o PNG. ¡Muchas gracias!
+            💡 <strong>¡Un pequeño recordatorio!</strong> Puedes adjuntar documentos en PDF, JPG o PNG. Las imágenes se convertirán automáticamente a <strong>PDF</strong> antes de guardarse. ¡Muchas gracias!
         </div>
 
         <form id="form-ingreso" action="#" method="POST" enctype="multipart/form-data">
@@ -179,6 +179,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
     <script src="js/config.js"></script>
     <script src="js/upload.js"></script>
 </body>
