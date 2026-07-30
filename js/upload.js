@@ -71,13 +71,24 @@
     }).filter((item) => item.file);
   }
 
-  async function uploadDocuments(dni, nombres, files) {
+  function buildFolderName(dni, apellidosNombres) {
+    const safeName = apellidosNombres
+      .normalize("NFC")
+      .replace(/[\/\\?%*:|"<>]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    return `${dni}-${safeName}`;
+  }
+
+  async function uploadDocuments(dni, apellidosNombres, files) {
     const uploaded = [];
+    const folderName = buildFolderName(dni, apellidosNombres);
 
     for (let i = 0; i < files.length; i += 1) {
       const item = files[i];
       const ext = extensionFromFile(item.file);
-      const path = `${dni}/${item.label}.${ext}`;
+      const path = `${folderName}/${item.label}.${ext}`;
 
       setStatus(
         `Subiendo ${i + 1} de ${files.length}: ${item.label}...`,
@@ -106,10 +117,10 @@
       uploaded.push(path);
     }
 
-    const metaPath = `${dni}/datos.json`;
+    const metaPath = `${folderName}/datos.json`;
     const meta = {
       dni,
-      nombres_completos: nombres,
+      apellidos_y_nombres: apellidosNombres,
       enviado_en: new Date().toISOString(),
       archivos: uploaded,
     };
@@ -140,7 +151,7 @@
       throw new Error(`No se pudo guardar datos.json: ${metaError.message}`);
     }
 
-    return uploaded;
+    return { uploaded, folderName };
   }
 
   form.addEventListener("submit", async (event) => {
@@ -156,10 +167,15 @@
     }
 
     const dni = String(form.dni.value || "").trim();
-    const nombres = String(form.nombres_completos.value || "").trim();
+    const apellidosNombres = String(form.apellidos_nombres.value || "").trim();
 
     if (!/^\d{8}$/.test(dni)) {
       setStatus("El DNI debe tener exactamente 8 dígitos.", "warning");
+      return;
+    }
+
+    if (!apellidosNombres) {
+      setStatus("Debes ingresar los apellidos y nombres.", "warning");
       return;
     }
 
@@ -173,9 +189,13 @@
     submitBtn.textContent = "Enviando...";
 
     try {
-      const uploaded = await uploadDocuments(dni, nombres, files);
+      const { uploaded, folderName } = await uploadDocuments(
+        dni,
+        apellidosNombres,
+        files
+      );
       setStatus(
-        `Listo. Se guardaron ${uploaded.length} archivo(s) en la carpeta ${dni}.`,
+        `Listo. Se guardaron ${uploaded.length} archivo(s) en la carpeta ${folderName}.`,
         "success"
       );
       form.reset();
