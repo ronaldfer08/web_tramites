@@ -16,6 +16,7 @@
   const statusEl = document.getElementById("upload-status");
   const submitBtn = document.getElementById("btn-enviar");
   const dniInput = document.getElementById("dni");
+  const convertedFiles = new Map();
   let pendingConversions = 0;
 
   if (!form || !window.supabase) {
@@ -166,7 +167,9 @@
   function collectFiles(formElement) {
     return FILE_FIELDS.map((field) => {
       const input = formElement.elements.namedItem(field.name);
-      const file = input && input.files && input.files[0] ? input.files[0] : null;
+      const selectedFile =
+        input && input.files && input.files[0] ? input.files[0] : null;
+      const file = convertedFiles.get(field.name) || selectedFile;
       return { ...field, file };
     }).filter((item) => item.file);
   }
@@ -176,6 +179,7 @@
     if (!input) return;
 
     input.addEventListener("change", async () => {
+      convertedFiles.delete(field.name);
       const selectedFile = input.files && input.files[0];
       if (!selectedFile || !isImageFile(selectedFile)) return;
 
@@ -185,11 +189,22 @@
 
       try {
         const pdfFile = await convertImageToPdf(selectedFile);
-        const replacement = new DataTransfer();
-        replacement.items.add(pdfFile);
-        input.files = replacement.files;
+
+        // El archivo convertido se guarda aparte para funcionar también en
+        // navegadores móviles que no permiten modificar input.files.
+        const currentFile = input.files && input.files[0];
+        const selectionIsCurrent =
+          currentFile &&
+          currentFile.name === selectedFile.name &&
+          currentFile.size === selectedFile.size &&
+          currentFile.lastModified === selectedFile.lastModified;
+
+        if (!selectionIsCurrent) return;
+
+        convertedFiles.set(field.name, pdfFile);
         setStatus(`${field.label} se convirtió correctamente a PDF.`, "success");
       } catch (error) {
+        convertedFiles.delete(field.name);
         input.value = "";
         setStatus(
           `No se pudo convertir ${field.label}: ${error.message}`,
@@ -358,6 +373,7 @@
         "success"
       );
       form.reset();
+      convertedFiles.clear();
     } catch (error) {
       setStatus(
         `Error al subir: ${error.message || "intenta nuevamente."}`,
