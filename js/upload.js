@@ -15,7 +15,6 @@
   const form = document.getElementById("form-ingreso");
   const statusEl = document.getElementById("upload-status");
   const submitBtn = document.getElementById("btn-enviar");
-  const dniInput = document.getElementById("dni");
   const convertedFiles = new Map();
   let pendingConversions = 0;
 
@@ -42,12 +41,6 @@
   const client = configReady
     ? window.supabase.createClient(projectUrl, anonKey)
     : null;
-
-  if (dniInput) {
-    dniInput.addEventListener("input", () => {
-      dniInput.value = dniInput.value.replace(/\D/g, "").slice(0, 10);
-    });
-  }
 
   function setStatus(message, type) {
     if (!statusEl) return;
@@ -219,19 +212,30 @@
     });
   });
 
-  function buildFolderName(dni, apellidosNombres) {
-    const safeName = apellidosNombres
-      .normalize("NFC")
+  function sanitizeStorageName(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
       .replace(/[\/\\?%*:|"<>]/g, "")
       .replace(/\s+/g, " ")
       .trim();
-
-    return `${dni}-${safeName}`;
   }
 
-  async function uploadDocuments(dni, apellidosNombres, files) {
+  function buildFolderName(apellidosNombres) {
+    return sanitizeStorageName(apellidosNombres);
+  }
+
+  function buildStoredFileName(file, fallbackName) {
+    const originalBaseName = String(file.name || "").replace(/\.[^.]+$/, "");
+    const safeBaseName = sanitizeStorageName(originalBaseName || fallbackName);
+
+    return `${safeBaseName}.pdf`;
+  }
+
+  async function uploadDocuments(apellidosNombres, files) {
     const uploaded = [];
-    const folderName = buildFolderName(dni, apellidosNombres);
+    const folderName = buildFolderName(apellidosNombres);
+    const storedNames = new Set();
 
     for (let i = 0; i < files.length; i += 1) {
       const item = files[i];
@@ -242,7 +246,17 @@
       );
 
       const pdfFile = await prepareFileAsPdf(item.file);
-      const path = `${folderName}/${item.label}.pdf`;
+      const storedFileName = buildStoredFileName(pdfFile, item.label);
+      const normalizedStoredName = storedFileName.toLowerCase();
+
+      if (storedNames.has(normalizedStoredName)) {
+        throw new Error(
+          `Hay dos documentos con el mismo nombre: ${storedFileName}. Renombra uno antes de enviarlo.`
+        );
+      }
+      storedNames.add(normalizedStoredName);
+
+      const path = `${folderName}/${storedFileName}`;
 
       if (
         pdfFile.type !== "application/pdf" ||
@@ -254,7 +268,7 @@
       }
 
       setStatus(
-        `Subiendo ${i + 1} de ${files.length}: ${item.label}.pdf...`,
+        `Subiendo ${i + 1} de ${files.length}: ${storedFileName}...`,
         "info"
       );
 
@@ -282,7 +296,6 @@
 
     const metaPath = `${folderName}/datos.json`;
     const meta = {
-      dni,
       apellidos_y_nombres: apellidosNombres,
       enviado_en: new Date().toISOString(),
       archivos: uploaded,
@@ -329,20 +342,11 @@
       return;
     }
 
-    const dni = String(form.dni.value || "").trim();
     const apellidosNombres = String(form.apellidos_nombres.value || "").trim();
 
     if (pendingConversions > 0) {
       setStatus(
         "Espera a que terminen de convertirse las imágenes a PDF.",
-        "warning"
-      );
-      return;
-    }
-
-    if (!/^\d{8,10}$/.test(dni)) {
-      setStatus(
-        "El DNI debe tener entre 8 y 10 dígitos, sin letras ni símbolos.",
         "warning"
       );
       return;
@@ -364,7 +368,6 @@
 
     try {
       const { uploaded, folderName } = await uploadDocuments(
-        dni,
         apellidosNombres,
         files
       );
