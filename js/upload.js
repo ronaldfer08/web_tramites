@@ -225,17 +225,9 @@
     return sanitizeStorageName(apellidosNombres);
   }
 
-  function buildStoredFileName(file, fallbackName) {
-    const originalBaseName = String(file.name || "").replace(/\.[^.]+$/, "");
-    const safeBaseName = sanitizeStorageName(originalBaseName || fallbackName);
-
-    return `${safeBaseName}.pdf`;
-  }
-
   async function uploadDocuments(apellidosNombres, files) {
     const uploaded = [];
     const folderName = buildFolderName(apellidosNombres);
-    const storedNames = new Set();
 
     for (let i = 0; i < files.length; i += 1) {
       const item = files[i];
@@ -246,16 +238,7 @@
       );
 
       const pdfFile = await prepareFileAsPdf(item.file);
-      const storedFileName = buildStoredFileName(pdfFile, item.label);
-      const normalizedStoredName = storedFileName.toLowerCase();
-
-      if (storedNames.has(normalizedStoredName)) {
-        throw new Error(
-          `Hay dos documentos con el mismo nombre: ${storedFileName}. Renombra uno antes de enviarlo.`
-        );
-      }
-      storedNames.add(normalizedStoredName);
-
+      const storedFileName = `${item.label}.pdf`;
       const path = `${folderName}/${storedFileName}`;
 
       if (
