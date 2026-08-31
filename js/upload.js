@@ -125,6 +125,118 @@
     });
   }
 
+  function nextPaint() {
+    return new Promise((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
+    });
+  }
+
+  async function convertDocxToPdf(file) {
+    if (!window.docx || typeof window.docx.renderAsync !== "function") {
+      throw new Error(
+        "No se pudo cargar el lector de Word. Recarga la página."
+      );
+    }
+
+    if (!window.html2canvas || !window.jspdf || !window.jspdf.jsPDF) {
+      throw new Error(
+        "No se pudo cargar el conversor de Word a PDF. Recarga la página."
+      );
+    }
+
+    const renderContainer = document.createElement("div");
+    renderContainer.setAttribute("aria-hidden", "true");
+    Object.assign(renderContainer.style, {
+      position: "fixed",
+      left: "-100000px",
+      top: "0",
+      width: "900px",
+      background: "#ffffff",
+      pointerEvents: "none",
+      zIndex: "-1",
+    });
+    document.body.appendChild(renderContainer);
+
+    try {
+      const data = await file.arrayBuffer();
+      await window.docx.renderAsync(data, renderContainer, null, {
+        breakPages: true,
+        ignoreLastRenderedPageBreak: false,
+        useBase64URL: true,
+      });
+
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+      await nextPaint();
+
+      let pages = Array.from(renderContainer.querySelectorAll("section.docx"));
+      if (!pages.length) {
+        const wrapper = renderContainer.querySelector(".docx-wrapper");
+        if (wrapper) pages = [wrapper];
+      }
+      if (!pages.length) {
+        throw new Error("El documento Word no contiene páginas procesables.");
+      }
+
+      const { jsPDF } = window.jspdf;
+      let pdf = null;
+
+      for (let index = 0; index < pages.length; index += 1) {
+        const page = pages[index];
+        const canvas = await window.html2canvas(page, {
+          scale: Math.min(window.devicePixelRatio || 1, 2),
+          useCORS: true,
+          backgroundColor: "#ffffff",
+          logging: false,
+        });
+        const orientation =
+          canvas.width > canvas.height ? "landscape" : "portrait";
+
+        if (!pdf) {
+          pdf = new jsPDF({
+            orientation,
+            unit: "pt",
+            format: "a4",
+            compress: true,
+          });
+        } else {
+          pdf.addPage("a4", orientation);
+        }
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const scale = Math.min(
+          pageWidth / canvas.width,
+          pageHeight / canvas.height
+        );
+        const width = canvas.width * scale;
+        const height = canvas.height * scale;
+        const x = (pageWidth - width) / 2;
+        const y = (pageHeight - height) / 2;
+
+        pdf.addImage(
+          canvas.toDataURL("image/jpeg", 0.92),
+          "JPEG",
+          x,
+          y,
+          width,
+          height,
+          undefined,
+          "MEDIUM"
+        );
+      }
+
+      const baseName = file.name.replace(/\.[^.]+$/, "") || "documento";
+      return new File([pdf.output("blob")], `${baseName}.pdf`, {
+        type: "application/pdf",
+        lastModified: Date.now(),
+      });
+    } finally {
+      renderContainer.remove();
+    }
+  }
+
   async function prepareFileAsPdf(file) {
     const extension = extensionFromFile(file);
 
@@ -144,8 +256,12 @@
       return convertImageToPdf(file);
     }
 
+    if (extension === "docx") {
+      return convertDocxToPdf(file);
+    }
+
     throw new Error(
-      `${file.name}: formato no permitido. Usa PDF, JPG, JPEG o PNG.`
+      `${file.name}: formato no permitido. Usa PDF, JPG, JPEG, PNG o DOCX.`
     );
   }
 
@@ -155,6 +271,10 @@
       ["image/jpeg", "image/png"].includes(file.type) ||
       ["jpg", "jpeg", "png"].includes(extension)
     );
+  }
+
+  function isDocxFile(file) {
+    return extensionFromFile(file) === "docx";
   }
 
   function collectFiles(formElement) {
@@ -174,14 +294,21 @@
     input.addEventListener("change", async () => {
       convertedFiles.delete(field.name);
       const selectedFile = input.files && input.files[0];
-      if (!selectedFile || !isImageFile(selectedFile)) return;
+      if (
+        !selectedFile ||
+        (!isImageFile(selectedFile) && !isDocxFile(selectedFile))
+      ) {
+        return;
+      }
 
       pendingConversions += 1;
       submitBtn.disabled = true;
       setStatus(`Convirtiendo ${field.label} a PDF...`, "info");
 
       try {
-        const pdfFile = await convertImageToPdf(selectedFile);
+        const pdfFile = isDocxFile(selectedFile)
+          ? await convertDocxToPdf(selectedFile)
+          : await convertImageToPdf(selectedFile);
 
         // El archivo convertido se guarda aparte para funcionar también en
         // navegadores móviles que no permiten modificar input.files.
@@ -329,7 +456,7 @@
 
     if (pendingConversions > 0) {
       setStatus(
-        "Espera a que terminen de convertirse las imágenes a PDF.",
+        "Espera a que terminen de convertirse los documentos a PDF.",
         "warning"
       );
       return;

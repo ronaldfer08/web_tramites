@@ -25,7 +25,7 @@
 
     <main class="container mb-5">
         <div class="alert alert-info border-0 shadow-sm text-center mb-4 rounded-3 reminder-alert" role="alert">
-            💡 <strong>¡Un pequeño recordatorio!</strong> Puedes adjuntar documentos en PDF, JPG o PNG. Las imágenes se convertirán automáticamente a <strong>PDF</strong> antes de guardarse. ¡Muchas gracias!
+            💡 <strong>¡Un pequeño recordatorio!</strong> Puedes adjuntar documentos en PDF, JPG, PNG o Word (.docx). Las imágenes y los documentos Word se convertirán automáticamente a <strong>PDF</strong> antes de guardarse. ¡Muchas gracias!
         </div>
 
         <form id="form-ingreso" action="#" method="POST" enctype="multipart/form-data">
@@ -52,26 +52,26 @@
                     <div class="mb-4">
                         <label for="doc_identidad" class="form-label">DNI o Carné de Extranjería (Ambas caras)</label>
                         <p class="info-text">Debe estar vigente y ser legible.</p>
-                        <input id="doc_identidad" name="doc_identidad" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <input id="doc_identidad" name="doc_identidad" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" required>
                     </div>
                     
                     <div class="mb-4">
                         <label for="antecedentes" class="form-label">Antecedentes Penales y Policiales o CERTIJOVEN</label>
                         <p class="info-text">Sube tu certificado actualizado.</p>
-                        <input id="antecedentes" name="antecedentes" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <input id="antecedentes" name="antecedentes" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" required>
                         <a href="https://www.empleosperu.gob.pe/portal-mtpe/#/login" target="_blank" class="help-link text-decoration-none">👉 Descarga tu Certificado aquí</a>
                     </div>
                     
                     <div class="mb-4">
                         <label for="recibo_servicios" class="form-label">Recibo de servicios (Agua, luz o teléfono)</label>
                         <p class="info-text">El recibo más reciente para confirmar tu dirección.</p>
-                        <input id="recibo_servicios" name="recibo_servicios" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <input id="recibo_servicios" name="recibo_servicios" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" required>
                     </div>
                     
                     <div class="mb-3">
                         <label for="movimiento_migratorio" class="form-label">Certificado de Movimiento Migratorio <span class="badge bg-secondary ms-1">Solo Extranjeros</span></label>
                         <p class="info-text">Costo aprox. S/.15.10 en el Banco de la Nación.</p>
-                        <input id="movimiento_migratorio" name="movimiento_migratorio" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png">
+                        <input id="movimiento_migratorio" name="movimiento_migratorio" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx">
                         <a href="https://agenciavirtual.migraciones.gob.pe/agencia-virtual/identidad" target="_blank" class="help-link text-decoration-none">👉 Trámitalo en Migraciones</a>
                     </div>
                 </div>
@@ -86,19 +86,19 @@
                     <div class="mb-4">
                         <label for="estudios" class="form-label">Certificado de Estudios o CERTIJOVEN</label>
                         <p class="info-text">Secundaria, instituto o universidad.</p>
-                        <input id="estudios" name="estudios" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <input id="estudios" name="estudios" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" required>
                     </div>
                     
                     <div class="mb-4">
                         <label for="trabajo" class="form-label">Certificados de Trabajo Anteriores o CERTIJOVEN</label>
                         <p class="info-text">Acredita tu experiencia laboral previa.</p>
-                        <input id="trabajo" name="trabajo" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <input id="trabajo" name="trabajo" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" required>
                     </div>
                     
                     <div class="mb-3">
                         <label for="retenciones" class="form-label">Certificado de Retenciones 5ta Categoría <span class="badge bg-secondary ms-1">Si aplica</span></label>
                         <p class="info-text">Entregado por tu último empleador.</p>
-                        <input id="retenciones" name="retenciones" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png">
+                        <input id="retenciones" name="retenciones" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx">
                     </div>
                 </div>
             </div>
@@ -111,19 +111,19 @@
                 <div class="card-body p-4">
                     <div class="mb-4">
                         <label for="pareja_matrimonio" class="form-label">DNI de Pareja + Acta de Matrimonio o Convivencia</label>
-                        <input id="pareja_matrimonio" name="pareja_matrimonio" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png">
+                        <input id="pareja_matrimonio" name="pareja_matrimonio" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx">
                     </div>
                     
                     <div class="mb-4">
                         <label for="dni_hijos" class="form-label">DNI de Hijos</label>
                         <p class="info-text">Menores de edad o mayores estudiando.</p>
-                        <input id="dni_hijos" name="dni_hijos" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png">
+                        <input id="dni_hijos" name="dni_hijos" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx">
                     </div>
                     
                     <div class="mb-3">
                         <label for="estudios_hijo" class="form-label">Certificado de Estudios de Hijo Mayor</label>
                         <p class="info-text">Solo si es mayor de edad y sigue estudiando.</p>
-                        <input id="estudios_hijo" name="estudios_hijo" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png">
+                        <input id="estudios_hijo" name="estudios_hijo" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx">
                     </div>
                 </div>
             </div>
@@ -161,7 +161,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docx-preview@0.3.6/dist/docx-preview.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="js/config.js"></script>
-    <script src="js/upload.js?v=20260731-1"></script>
+    <script src="js/upload.js?v=20260831-2"></script>
 </body>
 </html>
