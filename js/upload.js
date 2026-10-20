@@ -1,14 +1,15 @@
 (function () {
   const FILE_FIELDS = [
-    { name: "doc_identidad", label: "dni_o_ce" },
+    { name: "doc_identidad", label: "dni_o_ce", multiple: true },
     { name: "antecedentes", label: "antecedentes" },
     { name: "recibo_servicios", label: "recibo_servicios" },
     { name: "movimiento_migratorio", label: "movimiento_migratorio" },
+    { name: "antecedentes_policiales", label: "antecedentes_policiales" },
     { name: "estudios", label: "estudios" },
     { name: "trabajo", label: "trabajo" },
     { name: "retenciones", label: "retenciones" },
-    { name: "pareja_matrimonio", label: "pareja_matrimonio" },
-    { name: "dni_hijos", label: "dni_hijos" },
+    { name: "pareja_matrimonio", label: "pareja_matrimonio", multiple: true },
+    { name: "dni_hijos", label: "dni_hijos", multiple: true },
     { name: "estudios_hijo", label: "estudios_hijo" },
   ];
 
@@ -277,51 +278,250 @@
     return extensionFromFile(file) === "docx";
   }
 
-  function collectFiles(formElement) {
-    return FILE_FIELDS.map((field) => {
-      const input = formElement.elements.namedItem(field.name);
-      const selectedFile =
-        input && input.files && input.files[0] ? input.files[0] : null;
-      const file = convertedFiles.get(field.name) || selectedFile;
-      return { ...field, file };
-    }).filter((item) => item.file);
+  function sameFile(left, right) {
+    return (
+      left &&
+      right &&
+      left.name === right.name &&
+      left.size === right.size &&
+      left.lastModified === right.lastModified
+    );
   }
 
-  FILE_FIELDS.forEach((field) => {
-    const input = form.elements.namedItem(field.name);
-    if (!input) return;
+  function sameSelection(currentFiles, selectedFiles) {
+    return (
+      currentFiles.length === selectedFiles.length &&
+      currentFiles.every((file, index) => sameFile(file, selectedFiles[index]))
+    );
+  }
 
-    input.addEventListener("change", async () => {
-      convertedFiles.delete(field.name);
-      const selectedFile = input.files && input.files[0];
-      if (
-        !selectedFile ||
-        (!isImageFile(selectedFile) && !isDocxFile(selectedFile))
-      ) {
-        return;
-      }
+  function storageLabel(field, index, total) {
+    return total > 1 ? `${field.label}_${index + 1}` : field.label;
+  }
+
+  function collectFiles(formElement) {
+    const items = [];
+
+    FILE_FIELDS.forEach((field) => {
+      const input = formElement.elements.namedItem(field.name);
+      const selectedFiles =
+        input && input.files ? Array.from(input.files) : [];
+      if (!selectedFiles.length) return;
+
+      const converted = convertedFiles.get(field.name);
+      const files =
+        field.multiple &&
+        Array.isArray(converted) &&
+        converted.length === selectedFiles.length
+          ? converted
+          : field.multiple
+            ? selectedFiles
+            : [converted || selectedFiles[0]];
+
+      files.forEach((file, index) => {
+        if (!file) return;
+        items.push({
+          ...field,
+          file,
+          storedLabel: storageLabel(field, index, files.length),
+        });
+      });
+    });
+
+    return items;
+  }
+
+  function assignInputFiles(input, files) {
+    const dataTransfer = new DataTransfer();
+    files.forEach((file) => dataTransfer.items.add(file));
+    input.files = dataTransfer.files;
+  }
+
+  function setupMultipleField(field, input) {
+    const list = document.getElementById(`${field.name}-lista`);
+    const replaceInput = document.createElement("input");
+    replaceInput.type = "file";
+    replaceInput.accept = input.accept;
+    replaceInput.hidden = true;
+    input.insertAdjacentElement("afterend", replaceInput);
+
+    let selectedFiles = [];
+    let replaceIndex = -1;
+    let syncing = false;
+    let conversionId = 0;
+
+    function render() {
+      if (!list) return;
+      list.replaceChildren();
+      list.hidden = selectedFiles.length === 0;
+
+      selectedFiles.forEach((file, index) => {
+        const item = document.createElement("li");
+        item.className = "selected-file";
+
+        const name = document.createElement("span");
+        name.textContent = file.name;
+
+        const actions = document.createElement("div");
+        actions.className = "selected-file-actions";
+
+        const changeButton = document.createElement("button");
+        changeButton.type = "button";
+        changeButton.className = "btn btn-sm btn-outline-secondary";
+        changeButton.textContent = "Cambiar";
+        changeButton.addEventListener("click", () => {
+          replaceIndex = index;
+          replaceInput.value = "";
+          replaceInput.click();
+        });
+
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.className = "btn btn-sm btn-outline-danger";
+        removeButton.textContent = "Quitar";
+        removeButton.addEventListener("click", () => {
+          updateSelection(selectedFiles.filter((_, fileIndex) => fileIndex !== index));
+        });
+
+        actions.append(changeButton, removeButton);
+        item.append(name, actions);
+        list.append(item);
+      });
+    }
+
+    async function convertCurrent(filesSnapshot, id) {
+      const convertible = filesSnapshot.some(
+        (file) => isImageFile(file) || isDocxFile(file)
+      );
+      if (!convertible) return;
 
       pendingConversions += 1;
       submitBtn.disabled = true;
       setStatus(`Convirtiendo ${field.label} a PDF...`, "info");
 
       try {
-        const pdfFile = isDocxFile(selectedFile)
-          ? await convertDocxToPdf(selectedFile)
-          : await convertImageToPdf(selectedFile);
+        const prepared = [];
+        for (const selectedFile of filesSnapshot) {
+          if (id !== conversionId) return;
+          if (isDocxFile(selectedFile)) {
+            prepared.push(await convertDocxToPdf(selectedFile));
+          } else if (isImageFile(selectedFile)) {
+            prepared.push(await convertImageToPdf(selectedFile));
+          } else {
+            prepared.push(selectedFile);
+          }
+        }
+
+        if (id !== conversionId) return;
+        convertedFiles.set(field.name, prepared);
+        setStatus(`${field.label} se convirtió correctamente a PDF.`, "success");
+      } catch (error) {
+        if (id !== conversionId) return;
+        convertedFiles.delete(field.name);
+        setStatus(
+          `No se pudo convertir ${field.label}: ${error.message}`,
+          "danger"
+        );
+      } finally {
+        pendingConversions -= 1;
+        if (pendingConversions === 0) {
+          submitBtn.disabled = false;
+        }
+      }
+    }
+
+    function updateSelection(nextFiles) {
+      selectedFiles = nextFiles;
+      conversionId += 1;
+      convertedFiles.delete(field.name);
+      syncing = true;
+      try {
+        assignInputFiles(input, selectedFiles);
+      } finally {
+        syncing = false;
+      }
+      render();
+      convertCurrent(selectedFiles.slice(), conversionId);
+    }
+
+    input.addEventListener("change", () => {
+      if (syncing) return;
+      const picked = Array.from(input.files || []);
+      if (!picked.length) {
+        updateSelection([]);
+        return;
+      }
+
+      const merged = selectedFiles.slice();
+      picked.forEach((file) => {
+        if (!merged.some((current) => sameFile(current, file))) {
+          merged.push(file);
+        }
+      });
+      updateSelection(merged);
+    });
+
+    replaceInput.addEventListener("change", () => {
+      const replacement = replaceInput.files && replaceInput.files[0];
+      const index = replaceIndex;
+      replaceInput.value = "";
+      if (!replacement || index < 0 || index >= selectedFiles.length) return;
+
+      const nextFiles = selectedFiles.slice();
+      nextFiles[index] = replacement;
+      updateSelection(nextFiles);
+    });
+
+    form.addEventListener("reset", () => {
+      selectedFiles = [];
+      replaceIndex = -1;
+      conversionId += 1;
+      render();
+    });
+  }
+
+  FILE_FIELDS.forEach((field) => {
+    const input = form.elements.namedItem(field.name);
+    if (!input) return;
+
+    if (field.multiple) {
+      setupMultipleField(field, input);
+      return;
+    }
+
+    input.addEventListener("change", async () => {
+      convertedFiles.delete(field.name);
+      const selectedFiles = input.files ? Array.from(input.files) : [];
+      const convertible = selectedFiles.filter(
+        (file) => isImageFile(file) || isDocxFile(file)
+      );
+      if (!convertible.length) return;
+
+      pendingConversions += 1;
+      submitBtn.disabled = true;
+      setStatus(`Convirtiendo ${field.label} a PDF...`, "info");
+
+      try {
+        const prepared = [];
+        for (const selectedFile of selectedFiles) {
+          if (isDocxFile(selectedFile)) {
+            prepared.push(await convertDocxToPdf(selectedFile));
+          } else if (isImageFile(selectedFile)) {
+            prepared.push(await convertImageToPdf(selectedFile));
+          } else {
+            prepared.push(selectedFile);
+          }
+        }
 
         // El archivo convertido se guarda aparte para funcionar también en
         // navegadores móviles que no permiten modificar input.files.
-        const currentFile = input.files && input.files[0];
-        const selectionIsCurrent =
-          currentFile &&
-          currentFile.name === selectedFile.name &&
-          currentFile.size === selectedFile.size &&
-          currentFile.lastModified === selectedFile.lastModified;
+        const currentFiles = input.files ? Array.from(input.files) : [];
+        if (!sameSelection(currentFiles, selectedFiles)) return;
 
-        if (!selectionIsCurrent) return;
-
-        convertedFiles.set(field.name, pdfFile);
+        convertedFiles.set(
+          field.name,
+          field.multiple ? prepared : prepared[0]
+        );
         setStatus(`${field.label} se convirtió correctamente a PDF.`, "success");
       } catch (error) {
         convertedFiles.delete(field.name);
@@ -365,7 +565,7 @@
       );
 
       const pdfFile = await prepareFileAsPdf(item.file);
-      const storedFileName = `${item.label}.pdf`;
+      const storedFileName = `${item.storedLabel || item.label}.pdf`;
       const path = `${folderName}/${storedFileName}`;
 
       if (

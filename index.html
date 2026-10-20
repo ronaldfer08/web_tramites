@@ -51,8 +51,9 @@
 
                     <div class="mb-4">
                         <label for="doc_identidad" class="form-label">DNI o Carné de Extranjería (Ambas caras)</label>
-                        <p class="info-text">Debe estar vigente y ser legible.</p>
-                        <input id="doc_identidad" name="doc_identidad" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" required>
+                        <p class="info-text">Debe estar vigente y ser legible. Puedes adjuntar más de un archivo. Usa Cambiar para corregir uno y Quitar si adjuntaste alguno de más.</p>
+                        <input id="doc_identidad" name="doc_identidad" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" multiple required>
+                        <ul id="doc_identidad-lista" class="selected-files" hidden></ul>
                     </div>
                     
                     <div class="mb-4">
@@ -68,11 +69,18 @@
                         <input id="recibo_servicios" name="recibo_servicios" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" required>
                     </div>
                     
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label for="movimiento_migratorio" class="form-label">Certificado de Movimiento Migratorio <span class="badge bg-secondary ms-1">Solo Extranjeros</span></label>
                         <p class="info-text">Costo aprox. S/.15.10 en el Banco de la Nación.</p>
                         <input id="movimiento_migratorio" name="movimiento_migratorio" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx">
                         <a href="https://agenciavirtual.migraciones.gob.pe/agencia-virtual/identidad" target="_blank" class="help-link text-decoration-none">👉 Trámitalo en Migraciones</a>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="antecedentes_policiales" class="form-label">Certificado de Antecedentes Policiales <span class="badge bg-secondary ms-1">Solo Extranjeros</span></label>
+                        <p class="info-text">Costo aprox. S/ 5.40 código 08116 en pagalo.pe.</p>
+                        <input id="antecedentes_policiales" name="antecedentes_policiales" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx">
+                        <a href="https://pagalo.pe/" target="_blank" class="help-link text-decoration-none">👉 Tramita tu Certificado aquí</a>
                     </div>
                 </div>
             </div>
@@ -85,8 +93,9 @@
                 <div class="card-body p-4">
                     <div class="mb-4">
                         <label for="estudios" class="form-label">Certificado de Estudios o CERTIJOVEN</label>
-                        <p class="info-text">Secundaria, instituto o universidad.</p>
+                        <p class="info-text">Secundaria, instituto, universidad o CERTIJOVEN.</p>
                         <input id="estudios" name="estudios" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" required>
+                        <a href="https://certificado.minedu.gob.pe/" target="_blank" class="help-link text-decoration-none">👉 Descarga tu Certificado aquí</a>
                     </div>
                     
                     <div class="mb-4">
@@ -111,13 +120,16 @@
                 <div class="card-body p-4">
                     <div class="mb-4">
                         <label for="pareja_matrimonio" class="form-label">DNI de Pareja + Acta de Matrimonio o Convivencia</label>
-                        <input id="pareja_matrimonio" name="pareja_matrimonio" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx">
+                        <p class="info-text">Puedes adjuntar más de un archivo. Usa Cambiar para corregir uno y Quitar si adjuntaste alguno de más.</p>
+                        <input id="pareja_matrimonio" name="pareja_matrimonio" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" multiple>
+                        <ul id="pareja_matrimonio-lista" class="selected-files" hidden></ul>
                     </div>
                     
                     <div class="mb-4">
                         <label for="dni_hijos" class="form-label">DNI de Hijos</label>
-                        <p class="info-text">Menores de edad o mayores estudiando.</p>
-                        <input id="dni_hijos" name="dni_hijos" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx">
+                        <p class="info-text">Menores de edad o mayores estudiando. Puedes adjuntar más de un archivo. Usa Cambiar para corregir uno y Quitar si adjuntaste alguno de más.</p>
+                        <input id="dni_hijos" name="dni_hijos" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" multiple>
+                        <ul id="dni_hijos-lista" class="selected-files" hidden></ul>
                     </div>
                     
                     <div class="mb-3">
@@ -165,6 +177,6 @@
     <script src="https://cdn.jsdelivr.net/npm/docx-preview@0.3.6/dist/docx-preview.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="js/config.js"></script>
-    <script src="js/upload.js?v=20260831-2"></script>
+    <script src="js/upload.js?v=20261020-6"></script>
 </body>
 </html>
