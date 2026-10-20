@@ -1,6 +1,6 @@
 (function () {
   const FILE_FIELDS = [
-    { name: "doc_identidad", label: "dni_o_ce", multiple: true },
+    { name: "doc_identidad", label: "dni_o_ce", multiple: true, merge: true },
     { name: "antecedentes", label: "antecedentes" },
     { name: "recibo_servicios", label: "recibo_servicios" },
     { name: "movimiento_migratorio", label: "movimiento_migratorio" },
@@ -8,8 +8,8 @@
     { name: "estudios", label: "estudios" },
     { name: "trabajo", label: "trabajo" },
     { name: "retenciones", label: "retenciones" },
-    { name: "pareja_matrimonio", label: "pareja_matrimonio", multiple: true },
-    { name: "dni_hijos", label: "dni_hijos", multiple: true },
+    { name: "pareja_matrimonio", label: "pareja_matrimonio", multiple: true, merge: true },
+    { name: "dni_hijos", label: "dni_hijos", multiple: true, merge: true },
     { name: "estudios_hijo", label: "estudios_hijo" },
   ];
 
@@ -318,6 +318,16 @@
             ? selectedFiles
             : [converted || selectedFiles[0]];
 
+      if (field.merge) {
+        items.push({
+          ...field,
+          files,
+          file: files[0],
+          storedLabel: field.label,
+        });
+        return;
+      }
+
       files.forEach((file, index) => {
         if (!file) return;
         items.push({
@@ -339,14 +349,8 @@
 
   function setupMultipleField(field, input) {
     const list = document.getElementById(`${field.name}-lista`);
-    const replaceInput = document.createElement("input");
-    replaceInput.type = "file";
-    replaceInput.accept = input.accept;
-    replaceInput.hidden = true;
-    input.insertAdjacentElement("afterend", replaceInput);
 
     let selectedFiles = [];
-    let replaceIndex = -1;
     let syncing = false;
     let conversionId = 0;
 
@@ -362,19 +366,6 @@
         const name = document.createElement("span");
         name.textContent = file.name;
 
-        const actions = document.createElement("div");
-        actions.className = "selected-file-actions";
-
-        const changeButton = document.createElement("button");
-        changeButton.type = "button";
-        changeButton.className = "btn btn-sm btn-outline-secondary";
-        changeButton.textContent = "Cambiar";
-        changeButton.addEventListener("click", () => {
-          replaceIndex = index;
-          replaceInput.value = "";
-          replaceInput.click();
-        });
-
         const removeButton = document.createElement("button");
         removeButton.type = "button";
         removeButton.className = "btn btn-sm btn-outline-danger";
@@ -383,8 +374,7 @@
           updateSelection(selectedFiles.filter((_, fileIndex) => fileIndex !== index));
         });
 
-        actions.append(changeButton, removeButton);
-        item.append(name, actions);
+        item.append(name, removeButton);
         list.append(item);
       });
     }
@@ -461,20 +451,8 @@
       updateSelection(merged);
     });
 
-    replaceInput.addEventListener("change", () => {
-      const replacement = replaceInput.files && replaceInput.files[0];
-      const index = replaceIndex;
-      replaceInput.value = "";
-      if (!replacement || index < 0 || index >= selectedFiles.length) return;
-
-      const nextFiles = selectedFiles.slice();
-      nextFiles[index] = replacement;
-      updateSelection(nextFiles);
-    });
-
     form.addEventListener("reset", () => {
       selectedFiles = [];
-      replaceIndex = -1;
       conversionId += 1;
       render();
     });
@@ -539,6 +517,28 @@
     });
   });
 
+  async function mergePdfFiles(pdfFiles, fileName) {
+    if (!window.PDFLib || !window.PDFLib.PDFDocument) {
+      throw new Error(
+        "No se pudo cargar el unificador de PDF. Recarga la página."
+      );
+    }
+
+    const { PDFDocument } = window.PDFLib;
+    const merged = await PDFDocument.create();
+
+    for (const file of pdfFiles) {
+      const source = await PDFDocument.load(await file.arrayBuffer());
+      const pages = await merged.copyPages(source, source.getPageIndices());
+      pages.forEach((page) => merged.addPage(page));
+    }
+
+    return new File([await merged.save()], fileName, {
+      type: "application/pdf",
+      lastModified: Date.now(),
+    });
+  }
+
   function sanitizeStorageName(value) {
     return String(value || "")
       .normalize("NFD")
@@ -564,8 +564,19 @@
         "info"
       );
 
-      const pdfFile = await prepareFileAsPdf(item.file);
       const storedFileName = `${item.storedLabel || item.label}.pdf`;
+      let pdfFile;
+
+      if (item.merge && item.files && item.files.length > 1) {
+        setStatus(`Uniendo los archivos de ${item.label} en un solo PDF...`, "info");
+        const pdfParts = [];
+        for (const file of item.files) {
+          pdfParts.push(await prepareFileAsPdf(file));
+        }
+        pdfFile = await mergePdfFiles(pdfParts, storedFileName);
+      } else {
+        pdfFile = await prepareFileAsPdf(item.file);
+      }
       const path = `${folderName}/${storedFileName}`;
 
       if (

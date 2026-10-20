@@ -51,7 +51,7 @@
 
                     <div class="mb-4">
                         <label for="doc_identidad" class="form-label">DNI o Carné de Extranjería (Ambas caras)</label>
-                        <p class="info-text">Debe estar vigente y ser legible. Puedes adjuntar más de un archivo. Usa Cambiar para corregir uno y Quitar si adjuntaste alguno de más.</p>
+                        <p class="info-text">Debe estar vigente y ser legible. Puedes adjuntar más de un archivo, por ejemplo ambas caras. Se guardarán juntos en un solo PDF. Usa Quitar si adjuntaste alguno de más.</p>
                         <input id="doc_identidad" name="doc_identidad" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" multiple required>
                         <ul id="doc_identidad-lista" class="selected-files" hidden></ul>
                     </div>
@@ -120,14 +120,14 @@
                 <div class="card-body p-4">
                     <div class="mb-4">
                         <label for="pareja_matrimonio" class="form-label">DNI de Pareja + Acta de Matrimonio o Convivencia</label>
-                        <p class="info-text">Puedes adjuntar más de un archivo. Usa Cambiar para corregir uno y Quitar si adjuntaste alguno de más.</p>
+                        <p class="info-text">Puedes adjuntar más de un archivo. Se guardarán juntos en un solo PDF. Usa Quitar si adjuntaste alguno de más.</p>
                         <input id="pareja_matrimonio" name="pareja_matrimonio" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" multiple>
                         <ul id="pareja_matrimonio-lista" class="selected-files" hidden></ul>
                     </div>
                     
                     <div class="mb-4">
                         <label for="dni_hijos" class="form-label">DNI de Hijos</label>
-                        <p class="info-text">Menores de edad o mayores estudiando. Puedes adjuntar más de un archivo. Usa Cambiar para corregir uno y Quitar si adjuntaste alguno de más.</p>
+                        <p class="info-text">Menores de edad o mayores estudiando. Puedes adjuntar más de un archivo. Se guardarán juntos en un solo PDF. Usa Quitar si adjuntaste alguno de más.</p>
                         <input id="dni_hijos" name="dni_hijos" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx" multiple>
                         <ul id="dni_hijos-lista" class="selected-files" hidden></ul>
                     </div>
@@ -176,7 +176,8 @@
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/docx-preview@0.3.6/dist/docx-preview.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="js/config.js"></script>
-    <script src="js/upload.js?v=20261020-6"></script>
+    <script src="js/upload.js?v=20261020-9"></script>
 </body>
 </html>
